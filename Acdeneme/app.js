@@ -3,17 +3,21 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
+const JsonWebToken = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const bodyParser = require("body-parser");
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-
+const SECRET_JWT_CODE= "asdas9a9s7fsj";
+const Database = require("./db");
 var app = express();
+app.use(bodyParser.json());
 
 
 // Set up mongoose connection
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
-const mongoDB = "insert_your_database_url_here";
+const mongoDB = "mongodb+srv://zekimertinc:<Gsl195565!>@ac.ll8ut9p.mongodb.net/?retryWrites=true&w=majority&appName=ac";
 
 main().catch((err) => console.log(err));
 async function main() {
@@ -48,6 +52,26 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+
+  // sign up
+  app.post("/signup", async (req, res) => {
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+    Database.User.create({
+      email: req.body.email,
+      password: bcrypt.hashSync(req.body.password, 10)
+    })
+      .then(user => {
+        const token = JsonWebToken.sign({ id: user._id,email:user.email }, SECRET_JWT_CODE)
+        res.json({ sucess:true,token:token });
+      })
+      .catch(error => {
+        res.json({sucess:false,error:error});
+      });
+
+    });
 
 
 
